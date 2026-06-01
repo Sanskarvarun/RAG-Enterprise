@@ -108,3 +108,40 @@ def get_documents(db: Session = Depends(get_db), username: str = Depends(get_cur
             "created_at": doc.created_at
         })
     return result
+
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    username: str = Depends(get_current_user_id)
+):
+    # 1. Fetch document from PostgreSQL/SQLite DB
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 2. Delete actual file from uploads folder
+    file_path = os.path.join("uploads", doc.filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"Error removing file from disk: {e}")
+
+    # 3. Delete chunks from Chroma Vector Store
+    try:
+        from app.core.rag_config import get_vector_store
+        vector_store = get_vector_store()
+        if hasattr(vector_store, "_collection"):
+            vector_store._collection.delete(where={"source": doc.filename})
+        else:
+            vector_store.delete(where={"source": doc.filename})
+    except Exception as e:
+        print(f"Error deleting from Chroma: {e}")
+
+    # 4. Delete document entry from DB
+    db.delete(doc)
+    db.commit()
+
+    return {"message": "Document deleted successfully"}

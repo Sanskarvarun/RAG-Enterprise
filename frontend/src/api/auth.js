@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000/auth';
+const BASE_API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = `${BASE_API_URL}/auth`;
 
 export const register = async (userData) => {
   const response = await axios.post(`${API_URL}/register`, userData);

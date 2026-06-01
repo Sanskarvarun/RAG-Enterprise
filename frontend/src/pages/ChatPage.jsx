@@ -4,7 +4,7 @@ import { sendQuestion, getConversations, getMessages, deleteConversation } from 
 import { Link } from 'react-router-dom';
 import {
   Send, Plus, Trash2, MessageSquare, FileText,
-  Bot, User, Loader2, BookOpen, ChevronRight, Home
+  Bot, User, Loader2, BookOpen, ChevronRight, Home, Sparkles, LogOut
 } from 'lucide-react';
 
 // Markdown-like renderer for code blocks, headers, bullet lists, and formatting
@@ -47,10 +47,10 @@ const MessageContent = ({ content, isUser }) => {
     const parts = text.split(/(\*\*[\s\S]*?\*\*|\*[\s\S]*?\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+        return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('*') && part.endsWith('*')) {
-        return <em key={index} className="italic text-slate-300">{part.slice(1, -1)}</em>;
+        return <em key={index} className="italic text-slate-350">{part.slice(1, -1)}</em>;
       }
       return part;
     });
@@ -59,7 +59,7 @@ const MessageContent = ({ content, isUser }) => {
   const flushList = (keyPrefix) => {
     if (currentList.length > 0) {
       renderedElements.push(
-        <ul key={`list-${keyPrefix}`} className={`list-disc pl-5 space-y-1 my-2 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+        <ul key={`list-${keyPrefix}`} className={`list-disc pl-5 space-y-1.5 my-2.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>
           {currentList.map((item, idx) => (
             <li key={idx} className="leading-relaxed">{parseInline(item)}</li>
           ))}
@@ -73,7 +73,7 @@ const MessageContent = ({ content, isUser }) => {
     if (block.type === 'code') {
       flushList(idx);
       renderedElements.push(
-        <pre key={idx} className="bg-slate-950/60 rounded-xl p-4 my-3 text-sm font-mono text-green-400 overflow-x-auto border border-slate-700/50 shadow-inner">
+        <pre key={idx} className="bg-slate-950/70 rounded-xl p-4 my-3 text-sm font-mono text-emerald-400 overflow-x-auto border border-slate-800/80 shadow-inner">
           <code>{block.content}</code>
         </pre>
       );
@@ -88,7 +88,7 @@ const MessageContent = ({ content, isUser }) => {
         flushList(idx);
 
         if (trimmed === '---' || trimmed === '***') {
-          renderedElements.push(<hr key={idx} className="border-slate-800 my-4" />);
+          renderedElements.push(<hr key={idx} className="border-slate-800/60 my-4" />);
         } else if (trimmed.startsWith('### ')) {
           renderedElements.push(
             <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2 flex items-center gap-2">
@@ -97,7 +97,7 @@ const MessageContent = ({ content, isUser }) => {
           );
         } else if (trimmed.startsWith('## ')) {
           renderedElements.push(
-            <h2 key={idx} className="text-lg font-bold text-white mt-5 mb-2.5 flex items-center gap-2 border-b border-slate-800 pb-1">
+            <h2 key={idx} className="text-lg font-bold text-white mt-5 mb-2.5 flex items-center gap-2 border-b border-slate-800/50 pb-1">
               {parseInline(trimmed.slice(3))}
             </h2>
           );
@@ -109,7 +109,7 @@ const MessageContent = ({ content, isUser }) => {
           );
         } else if (trimmed.length > 0) {
           renderedElements.push(
-            <p key={idx} className={`leading-relaxed my-1.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+            <p key={idx} className={`leading-relaxed my-2 ${isUser ? 'text-white' : 'text-slate-300'}`}>
               {parseInline(line)}
             </p>
           );
@@ -122,7 +122,7 @@ const MessageContent = ({ content, isUser }) => {
 
   flushList('final');
 
-  return <div className={`space-y-1 ${isUser ? 'text-white' : 'text-slate-300'}`}>{renderedElements}</div>;
+  return <div className={`space-y-1.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>{renderedElements}</div>;
 };
 
 const ChatPage = () => {
@@ -176,6 +176,7 @@ const ChatPage = () => {
 
   const handleDelete = async (e, convId) => {
     e.stopPropagation();
+    if (!window.confirm("Delete this conversation history?")) return;
     try {
       await deleteConversation(token, convId);
       setConversations(prev => prev.filter(c => c.id !== convId));
@@ -198,7 +199,6 @@ const ChatPage = () => {
 
     try {
       const result = await sendQuestion(token, question, activeConvId);
-      // Update conversation list
       if (!activeConvId) {
         await loadConversations();
       }
@@ -228,184 +228,242 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
+    <div className="flex h-screen bg-slate-955 text-white overflow-hidden relative font-sans">
+      {/* Dynamic Background Glows */}
+      <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none"></div>
+
       {/* Sidebar */}
-      <div className="w-72 flex-shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col">
-        {/* Logo */}
-        <div className="p-5 border-b border-slate-800">
+      <div className="w-80 flex-shrink-0 bg-slate-900/35 backdrop-blur-xl border-r border-slate-900/80 flex flex-col relative z-20">
+        
+        {/* Sidebar Header */}
+        <div className="p-6 border-b border-slate-900/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-lg">
-              <Bot size={18} />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-lg shadow-primary-500/10">
+              <Bot size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-sm">Enterprise AI</h1>
-              <p className="text-xs text-slate-500">Assistant Platform</p>
+              <h1 className="font-extrabold text-sm tracking-tight text-white">Enterprise AI</h1>
+              <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assistant Hub</p>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-3 space-y-1">
+        {/* Action Controls */}
+        <div className="p-4 space-y-2">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-primary-600 hover:bg-primary-500 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 transition-all shadow-lg hover:shadow-primary-500/10 hover:scale-[1.01] active:scale-[0.99]"
           >
             <Plus size={16} />
             New Conversation
           </button>
-          <Link
-            to="/documents"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <BookOpen size={16} />
-            Knowledge Base
-          </Link>
-          <Link
-            to="/"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <Home size={16} />
-            Dashboard
-          </Link>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/documents"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900/60 border border-slate-800 hover:text-white hover:bg-slate-850/80 transition-all"
+            >
+              <BookOpen size={13} />
+              Documents
+            </Link>
+            <Link
+              to="/"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900/60 border border-slate-800 hover:text-white hover:bg-slate-850/80 transition-all"
+            >
+              <Home size={13} />
+              Dashboard
+            </Link>
+          </div>
         </div>
 
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto px-3 pb-3">
-          <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider px-2 mb-2">Recent Chats</p>
+        {/* Recent Chats List */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="flex items-center justify-between px-2 mb-3">
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Recent Chats</p>
+            <span className="text-[10px] text-slate-650">{conversations.length} total</span>
+          </div>
+
           {conversations.length === 0 ? (
-            <p className="text-sm text-slate-600 text-center py-8 px-4">No conversations yet. Ask your first question!</p>
+            <div className="text-center py-10 px-4 bg-slate-900/20 border border-dashed border-slate-850 rounded-2xl">
+              <MessageSquare className="mx-auto text-slate-700 mb-2" size={24} />
+              <p className="text-xs text-slate-500">No active chats. Start by sending a question!</p>
+            </div>
           ) : (
-            conversations.map(conv => (
-              <button
-                key={conv.id}
-                onClick={() => loadMessages(conv.id)}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm mb-1 transition-all group ${activeConvId === conv.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <MessageSquare size={14} className="shrink-0 text-slate-500" />
-                  <span className="truncate">{conv.title}</span>
-                </div>
+            <div className="space-y-1.5">
+              {conversations.map(conv => (
                 <button
-                  onClick={(e) => handleDelete(e, conv.id)}
-                  className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 shrink-0 transition-all"
+                  key={conv.id}
+                  onClick={() => loadMessages(conv.id)}
+                  className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl text-sm transition-all group ${
+                    activeConvId === conv.id 
+                      ? 'bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-slate-850 text-white shadow-md' 
+                      : 'text-slate-400 border border-transparent hover:bg-slate-900/40 hover:text-white'
+                  }`}
                 >
-                  <Trash2 size={14} />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <MessageSquare size={14} className={activeConvId === conv.id ? 'text-primary-400 shrink-0' : 'text-slate-600 shrink-0'} />
+                    <span className="truncate text-left font-medium">{conv.title}</span>
+                  </div>
+                  <button
+                    onClick={(e) => handleDelete(e, conv.id)}
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 shrink-0 p-1 hover:bg-slate-800 rounded-lg transition-all"
+                    title="Delete Chat"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </button>
-              </button>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-        {/* User Footer */}
-        <div className="p-3 border-t border-slate-800">
-          <div className="flex items-center gap-2 px-2">
-            <div className="w-7 h-7 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold">
-              {token ? 'U' : '?'}
+        {/* Footer Account Section */}
+        <div className="p-4 border-t border-slate-900/80 bg-slate-950/20">
+          <div className="flex items-center justify-between gap-2 px-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-primary-600 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-primary-600/10 shrink-0">
+                {user ? user.username.slice(0, 2).toUpperCase() : 'AI'}
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-semibold text-slate-300 block truncate">{user ? user.full_name || user.username : 'User'}</span>
+                <span className="text-[10px] text-slate-500 block truncate">{user ? user.email : ''}</span>
+              </div>
             </div>
-            <span className="text-sm text-slate-300 flex-1 truncate">My Account</span>
-            <button onClick={logout} className="text-xs text-slate-500 hover:text-red-400 transition-colors">Logout</button>
+            <button 
+              onClick={logout} 
+              className="text-slate-500 hover:text-red-400 p-2 hover:bg-slate-900 rounded-xl transition-all"
+              title="Logout"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-grow flex flex-col min-w-0 bg-slate-950/20 relative z-10">
+        
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 backdrop-blur-sm">
-          <div>
-            <h2 className="font-semibold text-lg">Chat Assistant</h2>
-            <p className="text-xs text-slate-500">Powered by Gemini + RAG · Your documents are the source of truth</p>
+        <div className="px-8 py-5 border-b border-slate-900/60 flex items-center justify-between bg-slate-950/40 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="md:hidden w-8 h-8 rounded-xl bg-primary-500/10 flex items-center justify-center">
+              <Bot size={16} className="text-primary-400" />
+            </div>
+            <div>
+              <h2 className="font-bold text-slate-100 text-base">Chat Assistant</h2>
+              <p className="text-[10px] text-slate-500 font-medium">Enterprise RAG Engine · Grounded in your knowledge base</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-800 rounded-full px-3 py-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-            RAG Active
+          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/80 border border-slate-850 rounded-full px-3.5 py-1.5 shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span className="font-semibold text-slate-300">Live Context</span>
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        {/* Message Container */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 space-y-6">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500/20 to-blue-600/20 border border-primary-500/20 flex items-center justify-center mb-6">
-                <Bot size={36} className="text-primary-400" />
+            <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary-500/10 to-blue-600/10 border border-primary-500/20 flex items-center justify-center mb-6 shadow-inner animate-pulse">
+                <Sparkles size={28} className="text-primary-400" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-primary-400 to-blue-400 bg-clip-text text-transparent">
-                Ask anything
+              <h3 className="text-3xl font-extrabold mb-3 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                Enterprise AI Assistant
               </h3>
-              <p className="text-slate-500 max-w-sm text-sm">
-                I'll answer questions based on the documents in your knowledge base. Upload documents first, then start asking!
+              <p className="text-slate-455 max-w-md text-sm mb-10 leading-relaxed">
+                Hello! Ask any question, and I will search your uploaded knowledge base documents to construct an accurate, citation-backed answer.
               </p>
-              <div className="mt-8 grid grid-cols-1 gap-3 w-full max-w-md">
-                {["What topics are covered in the uploaded documents?", "Summarize the key points", "What are the main requirements?"].map(suggestion => (
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
+                {[
+                  "What topics are covered in the uploaded documents?",
+                  "Summarize the core requirements",
+                  "What is the timeline of the project?",
+                  "Analyze the key findings"
+                ].map(suggestion => (
                   <button
                     key={suggestion}
                     onClick={() => { setInput(suggestion); textareaRef.current?.focus(); }}
-                    className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-primary-500/50 hover:bg-slate-800 transition-all text-sm text-left text-slate-400 hover:text-white"
+                    className="flex items-center justify-between px-5 py-4 rounded-2xl bg-slate-900/30 border border-slate-900 hover:border-primary-500/30 hover:bg-slate-900/60 transition-all text-sm text-left text-slate-400 hover:text-white shadow-sm hover:shadow-md hover:scale-[1.01]"
                   >
-                    {suggestion}
-                    <ChevronRight size={16} className="shrink-0 ml-2" />
+                    <span className="font-medium truncate">{suggestion}</span>
+                    <ChevronRight size={14} className="text-slate-600 shrink-0 ml-2" />
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 mt-1 shadow-lg">
-                  <Bot size={16} />
-                </div>
-              )}
-              <div className={`max-w-2xl space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-                <div className={`rounded-2xl px-5 py-4 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-primary-600 text-white rounded-tr-none'
-                    : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-tl-none'
-                }`}>
-                  <MessageContent content={msg.content} isUser={msg.role === 'user'} />
+          {/* Messages Mapping */}
+          <div className="max-w-3xl mx-auto space-y-6">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end animate-in slide-in-from-right-4 duration-300' : 'justify-start animate-in slide-in-from-left-4 duration-300'}`}>
+                
+                {/* Assistant Avatar */}
+                {msg.role === 'assistant' && (
+                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 mt-1 shadow-lg shadow-primary-500/10">
+                    <Bot size={18} className="text-white" />
+                  </div>
+                )}
+                
+                <div className={`max-w-[85%] sm:max-w-xl space-y-2.5 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+                  
+                  {/* Bubble Content */}
+                  <div className={`rounded-2xl px-5 py-4.5 text-sm leading-relaxed shadow-md ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-br from-primary-600 to-blue-600 text-white rounded-tr-none shadow-primary-950/20'
+                      : 'bg-slate-900/40 backdrop-blur-md text-slate-200 border border-slate-900 rounded-tl-none'
+                  }`}>
+                    <MessageContent content={msg.content} isUser={msg.role === 'user'} />
+                  </div>
+
+                  {/* Document Citations / Sources */}
+                  {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1 animate-in fade-in duration-500">
+                      {msg.sources.map((src, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-[10px] bg-slate-900/60 border border-slate-900 px-3 py-1.5 rounded-full text-slate-400 shadow-sm hover:border-slate-800 transition-colors">
+                          <FileText size={10} className="text-primary-400" />
+                          <span className="font-semibold truncate max-w-[150px]">{src}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Sources */}
-                {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {msg.sources.map((src, i) => (
-                      <div key={i} className="flex items-center gap-1.5 text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-slate-400">
-                        <FileText size={12} className="text-primary-400" />
-                        {src}
-                      </div>
-                    ))}
+                {/* User Avatar */}
+                {msg.role === 'user' && (
+                  <div className="w-9 h-9 rounded-2xl bg-slate-900 border border-slate-850 flex items-center justify-center shrink-0 mt-1 shadow-md">
+                    <User size={16} className="text-slate-400" />
                   </div>
                 )}
               </div>
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 rounded-xl bg-slate-700 flex items-center justify-center shrink-0 mt-1">
-                  <User size={16} />
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
 
-          {/* Typing indicator */}
+          {/* Assistant Loading State */}
           {isLoading && (
-            <div className="flex gap-4 justify-start">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg">
-                <Bot size={16} />
+            <div className="max-w-3xl mx-auto flex gap-4 justify-start">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-primary-500/10">
+                <Bot size={18} className="text-white animate-pulse" />
               </div>
-              <div className="bg-slate-800/80 border border-slate-700/50 rounded-2xl rounded-tl-none px-5 py-4">
-                <div className="flex gap-1.5 items-center">
-                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  <span className="text-xs text-slate-500 ml-2">Thinking...</span>
+              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl rounded-tl-none px-5 py-4 shadow-sm animate-pulse">
+                <div className="flex gap-2 items-center">
+                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  <span className="text-[10px] font-bold text-slate-550 ml-2 uppercase tracking-wider animate-pulse">Formulating response...</span>
                 </div>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="flex justify-center">
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl max-w-md text-center">
+            <div className="max-w-md mx-auto flex justify-center animate-in fade-in duration-300">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold px-4.5 py-3 rounded-xl shadow-md text-center">
                 {error}
               </div>
             </div>
@@ -414,8 +472,8 @@ const ChatPage = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="px-4 pb-6 pt-3 border-t border-slate-800">
+        {/* Input Bar Area */}
+        <div className="px-6 md:px-12 pb-8 pt-4 border-t border-slate-900/60 bg-slate-950/20 backdrop-blur-md">
           <div className="max-w-3xl mx-auto relative">
             <textarea
               ref={textareaRef}
@@ -424,8 +482,8 @@ const ChatPage = () => {
               onKeyDown={handleKeyDown}
               placeholder="Ask a question about your documents... (Enter to send, Shift+Enter for new line)"
               rows={1}
-              className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 pr-14 text-sm resize-none focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 text-white placeholder-slate-500 transition-all leading-relaxed"
-              style={{ minHeight: '56px', maxHeight: '200px' }}
+              className="w-full bg-slate-900/40 border border-slate-900 rounded-2xl pl-5 pr-14 py-4.5 text-sm resize-none focus:outline-none focus:border-primary-500/40 focus:ring-1 focus:ring-primary-500/10 text-white placeholder-slate-500 transition-all leading-relaxed shadow-inner"
+              style={{ minHeight: '58px', maxHeight: '200px' }}
               onInput={e => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
@@ -434,13 +492,13 @@ const ChatPage = () => {
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="absolute right-3 bottom-3 w-9 h-9 bg-primary-600 hover:bg-primary-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-lg"
+              className="absolute right-3.5 bottom-3.5 w-9 h-9 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 disabled:from-slate-900 disabled:to-slate-900 disabled:border disabled:border-slate-800/40 text-white disabled:text-slate-650 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-lg shadow-primary-500/10 hover:scale-105 active:scale-[0.95]"
             >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
           </div>
-          <p className="text-center text-xs text-slate-600 mt-3">
-            Answers are grounded in your uploaded documents via RAG
+          <p className="text-center text-[10px] text-slate-600 font-medium tracking-wider uppercase mt-3">
+            Grounded RAG Response · Verify critical facts
           </p>
         </div>
       </div>
