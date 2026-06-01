@@ -34,6 +34,10 @@ PROMPT = ChatPromptTemplate.from_messages([
      "Use ONLY the provided context to answer the question. "
      "If the answer is not in the context, say 'I could not find this information in the uploaded documents.' "
      "Cite the source document name when relevant. "
+     "Present the information in a beautifully structured, highly readable format using clean markdown "
+     "such as headers (###), bullet points, and bold text for key metrics, scores, or facts. "
+     "Organize details into logical sections (e.g., Experience, Skills, Projects, Achievements) "
+     "where appropriate to ensure a premium, visual layout. "
      "Be concise, clear, and professional."),
     ("human",
      "Context:\n{context}\n\nQuestion: {question}"),

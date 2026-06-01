@@ -7,27 +7,122 @@ import {
   Bot, User, Loader2, BookOpen, ChevronRight, Home
 } from 'lucide-react';
 
-// Markdown-like renderer for code blocks and bold text
-const MessageContent = ({ content }) => {
-  const parts = content.split(/(```[\s\S]*?```|\*\*[\s\S]*?\*\*)/g);
-  return (
-    <div className="space-y-2">
-      {parts.map((part, i) => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const code = part.slice(3, -3).replace(/^\w+\n/, '');
-          return (
-            <pre key={i} className="bg-black/40 rounded-xl p-4 text-sm font-mono text-green-300 overflow-x-auto border border-slate-700">
-              <code>{code}</code>
-            </pre>
+// Markdown-like renderer for code blocks, headers, bullet lists, and formatting
+const MessageContent = ({ content, isUser }) => {
+  const blocks = [];
+  const lines = content.split('\n');
+  let inCodeBlock = false;
+  let codeBlockLines = [];
+  let codeBlockLang = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) {
+        blocks.push({
+          type: 'code',
+          lang: codeBlockLang,
+          content: codeBlockLines.join('\n')
+        });
+        codeBlockLines = [];
+        inCodeBlock = false;
+      } else {
+        inCodeBlock = true;
+        codeBlockLang = line.trim().slice(3);
+      }
+    } else if (inCodeBlock) {
+      codeBlockLines.push(line);
+    } else {
+      blocks.push({
+        type: 'line',
+        content: line
+      });
+    }
+  }
+
+  const renderedElements = [];
+  let currentList = [];
+
+  const parseInline = (text) => {
+    const parts = text.split(/(\*\*[\s\S]*?\*\*|\*[\s\S]*?\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={index} className="italic text-slate-300">{part.slice(1, -1)}</em>;
+      }
+      return part;
+    });
+  };
+
+  const flushList = (keyPrefix) => {
+    if (currentList.length > 0) {
+      renderedElements.push(
+        <ul key={`list-${keyPrefix}`} className={`list-disc pl-5 space-y-1 my-2 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+          {currentList.map((item, idx) => (
+            <li key={idx} className="leading-relaxed">{parseInline(item)}</li>
+          ))}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  blocks.forEach((block, idx) => {
+    if (block.type === 'code') {
+      flushList(idx);
+      renderedElements.push(
+        <pre key={idx} className="bg-slate-950/60 rounded-xl p-4 my-3 text-sm font-mono text-green-400 overflow-x-auto border border-slate-700/50 shadow-inner">
+          <code>{block.content}</code>
+        </pre>
+      );
+    } else {
+      const line = block.content;
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+        const itemText = trimmed.slice(2);
+        currentList.push(itemText);
+      } else {
+        flushList(idx);
+
+        if (trimmed === '---' || trimmed === '***') {
+          renderedElements.push(<hr key={idx} className="border-slate-800 my-4" />);
+        } else if (trimmed.startsWith('### ')) {
+          renderedElements.push(
+            <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2 flex items-center gap-2">
+              {parseInline(trimmed.slice(4))}
+            </h3>
           );
+        } else if (trimmed.startsWith('## ')) {
+          renderedElements.push(
+            <h2 key={idx} className="text-lg font-bold text-white mt-5 mb-2.5 flex items-center gap-2 border-b border-slate-800 pb-1">
+              {parseInline(trimmed.slice(3))}
+            </h2>
+          );
+        } else if (trimmed.startsWith('# ')) {
+          renderedElements.push(
+            <h1 key={idx} className="text-xl font-extrabold text-white mt-6 mb-3 flex items-center gap-2">
+              {parseInline(trimmed.slice(2))}
+            </h1>
+          );
+        } else if (trimmed.length > 0) {
+          renderedElements.push(
+            <p key={idx} className={`leading-relaxed my-1.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+              {parseInline(line)}
+            </p>
+          );
+        } else {
+          renderedElements.push(<div key={idx} className="h-2" />);
         }
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>;
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </div>
-  );
+      }
+    }
+  });
+
+  flushList('final');
+
+  return <div className={`space-y-1 ${isUser ? 'text-white' : 'text-slate-300'}`}>{renderedElements}</div>;
 };
 
 const ChatPage = () => {
@@ -268,7 +363,7 @@ const ChatPage = () => {
                     ? 'bg-primary-600 text-white rounded-tr-none'
                     : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-tl-none'
                 }`}>
-                  <MessageContent content={msg.content} />
+                  <MessageContent content={msg.content} isUser={msg.role === 'user'} />
                 </div>
 
                 {/* Sources */}
