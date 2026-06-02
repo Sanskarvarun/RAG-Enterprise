@@ -6,7 +6,7 @@ import json
 from app.db.database import get_db
 from app.models.chat import Conversation, Message
 from app.models.user import User
-from app.services.rag_service import get_streaming_response
+from app.services.rag_service import get_streaming_response, stream_rag_response
 import os
 import secrets
 from app.core.security import decode_access_token
@@ -194,19 +194,27 @@ async def ask_stream(
     db.add(user_msg)
     db.commit()
 
+    full_answer = []
+
     async def event_stream():
+        nonlocal full_answer
         try:
-            result = await get_streaming_response(request.question)
-            answer = result.get("answer", "")
-            sources = result.get("sources", [])
+            sources = []
+            async for chunk in stream_rag_response(request.question):
+                # Detect the trailing metadata line
+                if chunk.startswith("\n\n__SOURCES__:"):
+                    sources_json = chunk.replace("\n\n__SOURCES__:", "")
+                    try:
+                        sources = json.loads(sources_json)
+                    except Exception:
+                        sources = []
+                    yield json.dumps({"type": "sources", "content": sources}) + "\n"
+                else:
+                    full_answer.append(chunk)
+                    yield json.dumps({"type": "token", "content": chunk}) + "\n"
 
-            # Stream the answer in chunks
-            chunk_size = 200
-            for i in range(0, len(answer), chunk_size):
-                chunk = answer[i:i+chunk_size]
-                yield chunk
-
-            # After streaming, persist assistant message with sources
+            # Persist assistant message after stream is complete
+            answer = "".join(full_answer)
             assistant_msg = Message(
                 conversation_id=conversation.id,
                 role="assistant",
@@ -220,18 +228,17 @@ async def ask_stream(
             try:
                 user_tokens = get_token_count(request.question)
                 assistant_tokens = get_token_count(answer)
-                total = user_tokens + assistant_tokens
-                current_user.tokens_used = (
-                    current_user.tokens_used or 0) + total
+                current_user.tokens_used = (current_user.tokens_used or 0) + user_tokens + assistant_tokens
                 db.add(current_user)
                 db.commit()
             except Exception:
                 pass
 
         except Exception as e:
-            yield f"[ERROR] {str(e)}"
+            yield json.dumps({"type": "error", "content": str(e)}) + "\n"
 
-    return StreamingResponse(event_stream(), media_type="text/plain; charset=utf-8")
+    headers = {"X-Conversation-Id": str(conversation.id)}
+    return StreamingResponse(event_stream(), headers=headers, media_type="text/plain; charset=utf-8")
 
 
 @router.get("/conversations")

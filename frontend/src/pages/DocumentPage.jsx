@@ -30,14 +30,13 @@ const DocumentPage = () => {
 
   useEffect(() => {
     fetchDocuments();
-    const interval = setInterval(fetchDocuments, 4000); // Poll for status updates
+    const interval = setInterval(fetchDocuments, 4500); // Poll for status updates
     return () => clearInterval(interval);
   }, []);
 
   const handleFileSubmit = async (file) => {
     if (!file) return;
 
-    // Validate size (max 25MB)
     if (file.size > 25 * 1024 * 1024) {
       setError('File is too large. Maximum size allowed is 25MB.');
       return;
@@ -106,126 +105,121 @@ const DocumentPage = () => {
   const getFileIcon = (filename) => {
     const ext = filename.split('.').pop().toLowerCase();
     if (ext === 'pdf') {
-      return <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-2xl text-red-400"><FileText size={24} /></div>;
+      return <div className="bg-zinc-800 border border-zinc-700 p-2.5 rounded-lg text-zinc-400"><FileText size={20} /></div>;
     }
     if (ext === 'docx' || ext === 'doc') {
-      return <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-2xl text-blue-400"><FileText size={24} /></div>;
+      return <div className="bg-zinc-800 border border-zinc-700 p-2.5 rounded-lg text-zinc-400"><FileText size={20} /></div>;
     }
     if (ext === 'csv' || ext === 'xlsx') {
-      return <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-2xl text-green-400"><FileSpreadsheet size={24} /></div>;
+      return <div className="bg-zinc-800 border border-zinc-700 p-2.5 rounded-lg text-zinc-400"><FileSpreadsheet size={20} /></div>;
     }
-    return <div className="bg-slate-500/10 border border-slate-500/20 p-3 rounded-2xl text-slate-400"><FileCode size={24} /></div>;
+    return <div className="bg-zinc-800 border border-zinc-700 p-2.5 rounded-lg text-zinc-400"><FileCode size={20} /></div>;
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed': 
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-xs font-semibold tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
+            <span className="w-1 h-1 rounded-full bg-green-500"></span>
             Ready
           </span>
         );
       case 'processing': 
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-xs font-semibold tracking-wide">
-            <Loader2 className="animate-spin" size={12} />
-            Learning
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">
+            <Loader2 className="animate-spin text-zinc-500" size={10} />
+            Syncing
           </span>
         );
       case 'error': 
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-xs font-semibold tracking-wide">
-            <ShieldAlert size={12} />
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-red-400 text-[10px] font-semibold uppercase tracking-wider">
+            <ShieldAlert size={10} />
             Failed
           </span>
         );
       default: 
         return (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-slate-500/10 border border-slate-500/20 rounded-full text-slate-400 text-xs font-semibold tracking-wide">
-            <Clock size={12} />
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-500 text-[10px] font-semibold uppercase tracking-wider">
+            <Clock size={10} />
             Queued
           </span>
         );
     }
   };
 
-  // Stats calculations
   const totalDocsCount = files.length;
   const learningDocsCount = files.filter(f => f.status === 'processing' || f.status === 'pending').length;
   const readyDocsCount = files.filter(f => f.status === 'completed').length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-16">
-      {/* Background Glow */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="max-w-5xl mx-auto px-6 pt-12 relative z-10">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-16 font-sans antialiased">
+      <div className="max-w-4xl mx-auto px-6 pt-12">
         
         {/* Header Breadcrumb */}
-        <div className="mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors group">
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        <div className="mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+            <ArrowLeft size={14} />
             Back to Dashboard
           </Link>
         </div>
 
         {/* Header Title Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-200">
               Knowledge Base
             </h1>
-            <p className="text-slate-400 text-base">
-              Upload and manage documentation to train your AI model context.
+            <p className="text-zinc-500 text-xs mt-1">
+              Upload documents to configure context knowledge for the chat assistant.
             </p>
           </div>
           
-          <label className={`cursor-pointer inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/10 hover:scale-[1.02] active:scale-[0.98] ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            {isUploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-            {isUploading ? 'Learning File...' : 'Upload Document'}
+          <label className={`cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 rounded-lg text-xs font-semibold transition-all shadow-sm ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+            {isUploading ? 'Syncing...' : 'Upload Document'}
             <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.docx,.doc,.txt,.csv" />
           </label>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-6 rounded-2xl flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="bg-primary-500/10 p-3.5 rounded-xl text-primary-400">
-              <HardDrive size={22} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-zinc-900 border border-zinc-800/80 p-4.5 rounded-lg flex items-center gap-3">
+            <div className="bg-zinc-850 p-2.5 rounded text-zinc-400">
+              <HardDrive size={18} />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Documents</p>
-              <h3 className="text-2xl font-bold">{totalDocsCount}</h3>
+              <p className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider">Total Documents</p>
+              <h3 className="text-lg font-bold text-zinc-200">{totalDocsCount}</h3>
             </div>
           </div>
           
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-6 rounded-2xl flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className="bg-blue-500/10 p-3.5 rounded-xl text-blue-400">
-              <Database size={22} />
+          <div className="bg-zinc-900 border border-zinc-800/80 p-4.5 rounded-lg flex items-center gap-3">
+            <div className="bg-zinc-850 p-2.5 rounded text-zinc-400">
+              <Database size={18} />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Ready Chunks</p>
-              <h3 className="text-2xl font-bold">{readyDocsCount} <span className="text-xs font-normal text-slate-500">processed</span></h3>
+              <p className="text-[10px] text-zinc-550 font-bold uppercase tracking-wider">Processed</p>
+              <h3 className="text-lg font-bold text-zinc-200">{readyDocsCount} <span className="text-[10px] font-normal text-zinc-500">files</span></h3>
             </div>
           </div>
           
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-6 rounded-2xl flex items-center gap-4 hover:border-slate-800 transition-colors">
-            <div className={`p-3.5 rounded-xl ${learningDocsCount > 0 ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-500/10 text-slate-400'}`}>
-              <Clock size={22} className={learningDocsCount > 0 ? 'animate-pulse' : ''} />
+          <div className="bg-zinc-900 border border-zinc-800/80 p-4.5 rounded-lg flex items-center gap-3">
+            <div className="bg-zinc-850 p-2.5 rounded text-zinc-400">
+              <Clock size={18} />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Learning Syncing</p>
-              <h3 className="text-2xl font-bold">{learningDocsCount} <span className="text-xs font-normal text-slate-500">active</span></h3>
+              <p className="text-[10px] text-zinc-555 font-bold uppercase tracking-wider">Active Syncs</p>
+              <h3 className="text-lg font-bold text-zinc-200">{learningDocsCount} <span className="text-[10px] font-normal text-zinc-500">running</span></h3>
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-8 flex items-center gap-3 text-sm animate-in fade-in duration-300">
-            <AlertCircle size={18} className="shrink-0" />
-            <p className="font-medium">{error}</p>
+          <div className="bg-zinc-900 border border-red-900/50 text-red-400 p-3.5 rounded-lg mb-6 flex items-center gap-2.5 text-xs">
+            <AlertCircle size={14} className="shrink-0" />
+            <p className="font-semibold">{error}</p>
           </div>
         )}
 
@@ -235,19 +229,19 @@ const DocumentPage = () => {
           onDragOver={handleDrag}
           onDragLeave={handleDrag}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-3xl p-10 text-center mb-10 transition-all ${
+          className={`border border-dashed rounded-xl p-8 text-center mb-8 transition-colors ${
             dragActive 
-              ? 'border-primary-500 bg-primary-500/5' 
-              : 'border-slate-800 hover:border-slate-700/80 bg-slate-900/10'
+              ? 'border-zinc-500 bg-zinc-900/50' 
+              : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/20'
           }`}
         >
-          <div className="max-w-sm mx-auto flex flex-col items-center">
-            <div className="w-14 h-14 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-4 shadow-md text-slate-400 group-hover:scale-105 transition-transform">
-              <Upload size={24} className="text-slate-400" />
+          <div className="max-w-xs mx-auto flex flex-col items-center">
+            <div className="w-10 h-10 bg-zinc-850 border border-zinc-750 rounded-lg flex items-center justify-center mb-3 text-zinc-450">
+              <Upload size={18} />
             </div>
-            <h3 className="font-bold text-lg mb-1">Drag and drop file here</h3>
-            <p className="text-sm text-slate-500 mb-6">Supports PDF, DOCX, TXT, or CSV (Max 25MB)</p>
-            <label className="cursor-pointer text-xs font-bold text-primary-400 hover:text-primary-300 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-lg transition-all hover:bg-slate-800/80">
+            <h3 className="font-semibold text-sm mb-0.5">Drag and drop file here</h3>
+            <p className="text-[10px] text-zinc-500 mb-4">Supports PDF, DOCX, TXT, or CSV (Max 25MB)</p>
+            <label className="cursor-pointer text-[10px] font-bold text-zinc-300 hover:text-zinc-200 bg-zinc-850 border border-zinc-750 px-3.5 py-2 rounded transition-colors">
               Browse Files
               <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.docx,.doc,.txt,.csv" />
             </label>
@@ -255,46 +249,46 @@ const DocumentPage = () => {
         </div>
 
         {/* Files List Header */}
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Uploaded Documents</h2>
-          <span className="text-xs text-slate-500">{files.length} {files.length === 1 ? 'file' : 'files'}</span>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Stored Files</h2>
+          <span className="text-[10px] text-zinc-500">{files.length} documents</span>
         </div>
 
         {/* Document List */}
-        <div className="space-y-3.5">
+        <div className="space-y-2">
           {files.length === 0 ? (
-            <div className="text-center py-16 bg-slate-900/10 border border-slate-800 rounded-3xl">
-              <FileText className="mx-auto text-slate-700 mb-4" size={44} />
-              <p className="text-slate-500 text-sm">No files uploaded. Put your documents above to start.</p>
+            <div className="text-center py-12 bg-zinc-900/10 border border-zinc-800 rounded-xl">
+              <FileText className="mx-auto text-zinc-700 mb-2" size={32} />
+              <p className="text-zinc-500 text-xs">No documents uploaded yet.</p>
             </div>
           ) : (
             files.map((file) => (
               <div 
                 key={file.id} 
-                className="bg-slate-900/40 backdrop-blur-md border border-slate-850 hover:border-slate-800/80 p-4.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-900/60 transition-all shadow-md group"
+                className="bg-zinc-900/40 border border-zinc-850 p-3.5 rounded-lg flex items-center justify-between gap-4 hover:bg-zinc-900/70 transition-colors"
               >
-                <div className="flex items-start sm:items-center gap-4 min-w-0">
+                <div className="flex items-center gap-3.5 min-w-0">
                   {getFileIcon(file.filename)}
                   <div className="min-w-0">
-                    <h3 className="font-bold text-slate-100 truncate text-base hover:text-white transition-colors">
+                    <h3 className="font-semibold text-zinc-200 truncate text-sm">
                       {file.filename}
                     </h3>
-                    <p className="text-slate-500 text-xs mt-1 flex items-center gap-1.5">
+                    <p className="text-zinc-500 text-[10px] mt-0.5 flex items-center gap-1.5">
                       <span className="font-medium uppercase">{file.file_type}</span>
                       <span>•</span>
-                      <span>{new Date(file.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>{new Date(file.created_at).toLocaleDateString()}</span>
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between sm:justify-end gap-5">
+                <div className="flex items-center gap-4">
                   {getStatusBadge(file.status)}
                   <button 
                     onClick={() => handleDelete(file.id, file.filename)}
-                    className="text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 p-2 rounded-xl transition-all shadow-sm"
-                    title="Delete document"
+                    className="text-zinc-500 hover:text-zinc-300 border border-transparent p-1.5 rounded transition-colors"
+                    title="Delete file"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

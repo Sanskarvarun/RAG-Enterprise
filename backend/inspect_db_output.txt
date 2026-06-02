@@ -1,0 +1,93 @@
+Total conversations: 10
+
+================ Conversation ID: 1 | Title: whose resume is that? ================
+
+[USER]:
+whose resume is that?
+
+================ Conversation ID: 2 | Title: Summarize the key points ================
+
+[USER]:
+Summarize the key points
+
+================ Conversation ID: 3 | Title: Summarize the key points ================
+
+[USER]:
+Summarize the key points
+
+[ASSISTANT]:
+⚠️ The AI model is currently rate-limited (free tier quota exceeded). Please wait a minute and try again. If this persists, try a different Gemini API key or upgrade your Google AI Studio plan.
+Sources: ["Ch_Sanskar_Subudhi_Resume_updated (1) (1).pdf"]
+
+================ Conversation ID: 4 | Title: what is this document about? ================
+
+[USER]:
+what is this document about?
+
+================ Conversation ID: 5 | Title: what is this document about? ================
+
+[USER]:
+what is this document about?
+
+[ASSISTANT]:
+⚠️ This model is temporarily unavailable via the free HF API. Please try again shortly.
+Sources: ["Ch_Sanskar_Subudhi_Resume_updated (1) (1).pdf"]
+
+[USER]:
+what is this document about?
+
+[ASSISTANT]:
+⚠️ Unexpected error: Model 'mistralai/Mistral-7B-Instruct-v0.3' doesn't support task 'conversational'. Supported tasks: 'None', got: 'conversational'
+Sources: ["Ch_Sanskar_Subudhi_Resume_updated (1) (1).pdf"]
+
+[USER]:
+what is this document about?
+
+[ASSISTANT]:
+⚠️ AI models are currently unavailable. Details: Model Qwen/Qwen2.5-7B-Instruct is not supported for task text-generation and provider together. Supported task: conversational.
+Sources: ["Ch_Sanskar_Subudhi_Resume_updated (1) (1).pdf"]
+
+================ Conversation ID: 6 | Title: what do you know about java what is mentioned in the pdf abo... ================
+
+[USER]:
+what do you know about java what is mentioned in the pdf about java?
+
+[ASSISTANT]:
+I could not find this information in the uploaded documents.
+Sources: []
+
+================ Conversation ID: 7 | Title: tell me how many words does the dictionary contain ================
+
+[USER]:
+tell me how many words does the dictionary contain
+
+[ASSISTANT]:
+I could not find this information in the uploaded documents. The provided context contains definitions for a selection of words, but it does not specify the total number of words in the dictionary.
+Sources: ["dictionary.pdf"]
+
+================ Conversation ID: 8 | Title: give a summary of the dictionary pdf ================
+
+[USER]:
+give a summary of the dictionary pdf
+
+[ASSISTANT]:
+I could not find this information in the uploaded documents.
+Sources: ["test_debug.pdf", "tmp9mjflupq.txt", "test_pipeline.pdf", "test_fix.csv"]
+
+================ Conversation ID: 9 | Title: what is present in the dictionary pdf? ================
+
+[USER]:
+what is present in the dictionary pdf?
+
+[ASSISTANT]:
+I could not find this information in the uploaded documents.
+Sources: ["test_debug.pdf", "tmp9mjflupq.txt", "test_pipeline.pdf", "test_fix.csv"]
+
+================ Conversation ID: 10 | Title: tell me the meaning of the word cool ================
+
+[USER]:
+tell me the meaning of the word cool
+
+[ASSISTANT]:
+I could not find this information in the uploaded documents.
+Sources: ["test_debug.pdf", "test_fix.csv", "tmp9mjflupq.txt"]

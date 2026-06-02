@@ -83,15 +83,28 @@ async def upload_document(
 
     # 3. Process immediately (Synchronous)
     try:
-        process_document(file_path, file.filename)
+        chunks_count = process_document(file_path, filename)
         new_doc.status = "completed"
-    except Exception as e:
-        print(f"Error processing doc: {e}")
+        db.commit()
+        return {
+            "message": "File uploaded and processed successfully",
+            "document_id": new_doc.id,
+            "chunks": chunks_count
+        }
+    except ValueError as e:
+        # Known/expected errors (unsupported type, no text extracted, etc.)
+        print(f"Document processing error: {e}")
         new_doc.status = "error"
-
-    db.commit()
-
-    return {"message": "File uploaded and processed successfully", "document_id": new_doc.id}
+        db.commit()
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        print(f"Unexpected error processing doc: {e}")
+        new_doc.status = "error"
+        db.commit()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process document: {type(e).__name__} — {str(e)}"
+        )
 
 
 @router.get("/", response_model=List[dict])

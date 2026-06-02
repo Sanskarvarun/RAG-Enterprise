@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { sendQuestion, getConversations, getMessages, deleteConversation } from '../api/chat';
+import { sendQuestionStream, getConversations, getMessages, deleteConversation } from '../api/chat';
 import { Link } from 'react-router-dom';
 import {
   Send, Plus, Trash2, MessageSquare, FileText,
-  Bot, User, Loader2, BookOpen, ChevronRight, Home, Sparkles, LogOut
+  Bot, User, Loader2, BookOpen, ChevronRight, Home, LogOut
 } from 'lucide-react';
 
-// Markdown-like renderer for code blocks, headers, bullet lists, and formatting
+// Minimalist Markdown-like renderer
 const MessageContent = ({ content, isUser }) => {
   const blocks = [];
   const lines = content.split('\n');
@@ -47,10 +47,10 @@ const MessageContent = ({ content, isUser }) => {
     const parts = text.split(/(\*\*[\s\S]*?\*\*|\*[\s\S]*?\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+        return <strong key={index} className="font-semibold text-zinc-100">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('*') && part.endsWith('*')) {
-        return <em key={index} className="italic text-slate-350">{part.slice(1, -1)}</em>;
+        return <em key={index} className="italic text-zinc-450">{part.slice(1, -1)}</em>;
       }
       return part;
     });
@@ -59,9 +59,9 @@ const MessageContent = ({ content, isUser }) => {
   const flushList = (keyPrefix) => {
     if (currentList.length > 0) {
       renderedElements.push(
-        <ul key={`list-${keyPrefix}`} className={`list-disc pl-5 space-y-1.5 my-2.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+        <ul key={`list-${keyPrefix}`} className="list-disc pl-5 space-y-1.5 my-2 text-zinc-300">
           {currentList.map((item, idx) => (
-            <li key={idx} className="leading-relaxed">{parseInline(item)}</li>
+            <li key={idx} className="leading-relaxed text-sm">{parseInline(item)}</li>
           ))}
         </ul>
       );
@@ -73,7 +73,7 @@ const MessageContent = ({ content, isUser }) => {
     if (block.type === 'code') {
       flushList(idx);
       renderedElements.push(
-        <pre key={idx} className="bg-slate-950/70 rounded-xl p-4 my-3 text-sm font-mono text-emerald-400 overflow-x-auto border border-slate-800/80 shadow-inner">
+        <pre key={idx} className="bg-zinc-900 rounded-lg p-4 my-2 text-xs font-mono text-zinc-350 overflow-x-auto border border-zinc-800">
           <code>{block.content}</code>
         </pre>
       );
@@ -88,33 +88,33 @@ const MessageContent = ({ content, isUser }) => {
         flushList(idx);
 
         if (trimmed === '---' || trimmed === '***') {
-          renderedElements.push(<hr key={idx} className="border-slate-800/60 my-4" />);
+          renderedElements.push(<hr key={idx} className="border-zinc-800 my-4" />);
         } else if (trimmed.startsWith('### ')) {
           renderedElements.push(
-            <h3 key={idx} className="text-base font-bold text-white mt-4 mb-2 flex items-center gap-2">
+            <h3 key={idx} className="text-sm font-semibold text-zinc-100 mt-4 mb-1.5">
               {parseInline(trimmed.slice(4))}
             </h3>
           );
         } else if (trimmed.startsWith('## ')) {
           renderedElements.push(
-            <h2 key={idx} className="text-lg font-bold text-white mt-5 mb-2.5 flex items-center gap-2 border-b border-slate-800/50 pb-1">
+            <h2 key={idx} className="text-base font-semibold text-zinc-100 mt-5 mb-2 border-b border-zinc-800 pb-1">
               {parseInline(trimmed.slice(3))}
             </h2>
           );
         } else if (trimmed.startsWith('# ')) {
           renderedElements.push(
-            <h1 key={idx} className="text-xl font-extrabold text-white mt-6 mb-3 flex items-center gap-2">
+            <h1 key={idx} className="text-lg font-bold text-zinc-100 mt-6 mb-2.5">
               {parseInline(trimmed.slice(2))}
             </h1>
           );
         } else if (trimmed.length > 0) {
           renderedElements.push(
-            <p key={idx} className={`leading-relaxed my-2 ${isUser ? 'text-white' : 'text-slate-300'}`}>
+            <p key={idx} className={`leading-relaxed text-sm my-1.5 ${isUser ? 'text-zinc-100' : 'text-zinc-300'}`}>
               {parseInline(line)}
             </p>
           );
         } else {
-          renderedElements.push(<div key={idx} className="h-2" />);
+          renderedElements.push(<div key={idx} className="h-1.5" />);
         }
       }
     }
@@ -122,7 +122,7 @@ const MessageContent = ({ content, isUser }) => {
 
   flushList('final');
 
-  return <div className={`space-y-1.5 ${isUser ? 'text-white' : 'text-slate-300'}`}>{renderedElements}</div>;
+  return <div className="space-y-1">{renderedElements}</div>;
 };
 
 const ChatPage = () => {
@@ -176,7 +176,7 @@ const ChatPage = () => {
 
   const handleDelete = async (e, convId) => {
     e.stopPropagation();
-    if (!window.confirm("Delete this conversation history?")) return;
+    if (!window.confirm("Delete this conversation?")) return;
     try {
       await deleteConversation(token, convId);
       setConversations(prev => prev.filter(c => c.id !== convId));
@@ -192,30 +192,53 @@ const ChatPage = () => {
     setInput('');
     setError('');
 
-    // Optimistically add user message
-    const tempUserMsg = { id: Date.now(), role: 'user', content: question, sources: [] };
-    setMessages(prev => [...prev, tempUserMsg]);
+    // Optimistically add user message and an empty assistant response slot
+    const userMsgId = Date.now();
+    const tempUserMsg = { id: userMsgId, role: 'user', content: question, sources: [] };
+    const assistantMsgId = userMsgId + 1;
+    const tempAssistantMsg = { id: assistantMsgId, role: 'assistant', content: '', sources: [] };
+
+    setMessages(prev => [...prev, tempUserMsg, tempAssistantMsg]);
     setIsLoading(true);
 
+    let accumulatedAnswer = '';
+
     try {
-      const result = await sendQuestion(token, question, activeConvId);
-      if (!activeConvId) {
-        await loadConversations();
-      }
-      setActiveConvId(result.conversation_id);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: 'assistant',
-          content: result.answer,
-          sources: result.sources || []
+      await sendQuestionStream(
+        token,
+        question,
+        activeConvId,
+        (chunk) => {
+          accumulatedAnswer += chunk;
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMsgId
+                ? { ...msg, content: accumulatedAnswer }
+                : msg
+            )
+          );
+        },
+        async ({ conversationId, sources }) => {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMsgId
+                ? { ...msg, content: accumulatedAnswer, sources: sources || [] }
+                : msg
+            )
+          );
+          setIsLoading(false);
+          if (!activeConvId) {
+            setActiveConvId(conversationId);
+            await loadConversations();
+          }
+        },
+        (errMessage) => {
+          setError(errMessage || 'Failed to stream response.');
+          setIsLoading(false);
         }
-      ]);
+      );
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to get a response. Please try again.');
-      setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id));
-    } finally {
+      setError(err.message || 'Failed to get a response. Please try again.');
       setIsLoading(false);
     }
   };
@@ -228,23 +251,19 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-955 text-white overflow-hidden relative font-sans">
-      {/* Dynamic Background Glows */}
-      <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none"></div>
-
+    <div className="flex h-screen bg-zinc-950 text-zinc-105 overflow-hidden font-sans antialiased">
+      
       {/* Sidebar */}
-      <div className="w-80 flex-shrink-0 bg-slate-900/35 backdrop-blur-xl border-r border-slate-900/80 flex flex-col relative z-20">
+      <div className="w-72 flex-shrink-0 bg-zinc-900 border-r border-zinc-800/80 flex flex-col relative z-20">
         
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-slate-900/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shadow-lg shadow-primary-500/10">
-              <Bot size={20} className="text-white" />
+        <div className="px-6 py-5 border-b border-zinc-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+              <Bot size={16} className="text-zinc-350" />
             </div>
             <div>
-              <h1 className="font-extrabold text-sm tracking-tight text-white">Enterprise AI</h1>
-              <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Assistant Hub</p>
+              <h1 className="font-semibold text-xs tracking-wide text-zinc-200">Assistant Hub</h1>
             </div>
           </div>
         </div>
@@ -253,64 +272,62 @@ const ChatPage = () => {
         <div className="p-4 space-y-2">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 transition-all shadow-lg hover:shadow-primary-500/10 hover:scale-[1.01] active:scale-[0.99]"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold text-zinc-100 bg-zinc-800 hover:bg-zinc-750 border border-zinc-700 transition-colors shadow-sm"
           >
-            <Plus size={16} />
-            New Conversation
+            <Plus size={14} />
+            New Chat
           </button>
           
           <div className="grid grid-cols-2 gap-2">
             <Link
               to="/documents"
-              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900/60 border border-slate-800 hover:text-white hover:bg-slate-850/80 transition-all"
+              className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium text-zinc-400 bg-zinc-900/40 border border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
             >
-              <BookOpen size={13} />
+              <BookOpen size={12} />
               Documents
             </Link>
             <Link
               to="/"
-              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 bg-slate-900/60 border border-slate-800 hover:text-white hover:bg-slate-850/80 transition-all"
+              className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium text-zinc-400 bg-zinc-900/40 border border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
             >
-              <Home size={13} />
+              <Home size={12} />
               Dashboard
             </Link>
           </div>
         </div>
 
         {/* Recent Chats List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
-          <div className="flex items-center justify-between px-2 mb-3">
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Recent Chats</p>
-            <span className="text-[10px] text-slate-650">{conversations.length} total</span>
+        <div className="flex-1 overflow-y-auto px-3 pb-3">
+          <div className="px-3 mb-2 flex items-center justify-between">
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Conversations</p>
           </div>
 
           {conversations.length === 0 ? (
-            <div className="text-center py-10 px-4 bg-slate-900/20 border border-dashed border-slate-850 rounded-2xl">
-              <MessageSquare className="mx-auto text-slate-700 mb-2" size={24} />
-              <p className="text-xs text-slate-500">No active chats. Start by sending a question!</p>
+            <div className="text-center py-6 px-4 bg-zinc-950/20 border border-zinc-850 rounded-lg">
+              <p className="text-[11px] text-zinc-500">No chat history.</p>
             </div>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {conversations.map(conv => (
                 <button
                   key={conv.id}
                   onClick={() => loadMessages(conv.id)}
-                  className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl text-sm transition-all group ${
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-xs transition-colors group ${
                     activeConvId === conv.id 
-                      ? 'bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-slate-850 text-white shadow-md' 
-                      : 'text-slate-400 border border-transparent hover:bg-slate-900/40 hover:text-white'
+                      ? 'bg-zinc-800 text-zinc-100 font-medium' 
+                      : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <MessageSquare size={14} className={activeConvId === conv.id ? 'text-primary-400 shrink-0' : 'text-slate-600 shrink-0'} />
-                    <span className="truncate text-left font-medium">{conv.title}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MessageSquare size={13} className="text-zinc-500 shrink-0" />
+                    <span className="truncate text-left">{conv.title}</span>
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, conv.id)}
-                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 shrink-0 p-1 hover:bg-slate-800 rounded-lg transition-all"
+                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-zinc-300 p-0.5 rounded transition-all"
                     title="Delete Chat"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={12} />
                   </button>
                 </button>
               ))}
@@ -319,66 +336,58 @@ const ChatPage = () => {
         </div>
 
         {/* Footer Account Section */}
-        <div className="p-4 border-t border-slate-900/80 bg-slate-950/20">
-          <div className="flex items-center justify-between gap-2 px-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-primary-600 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-primary-600/10 shrink-0">
+        <div className="p-4 border-t border-zinc-850 bg-zinc-900/50">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-300 shrink-0">
                 {user ? user.username.slice(0, 2).toUpperCase() : 'AI'}
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-semibold text-slate-300 block truncate">{user ? user.full_name || user.username : 'User'}</span>
-                <span className="text-[10px] text-slate-500 block truncate">{user ? user.email : ''}</span>
+                <span className="text-xs font-medium text-zinc-300 block truncate leading-none">{user ? user.full_name || user.username : 'User'}</span>
+                <span className="text-[10px] text-zinc-555 block truncate mt-0.5">{user ? user.email : ''}</span>
               </div>
             </div>
             <button 
               onClick={logout} 
-              className="text-slate-500 hover:text-red-400 p-2 hover:bg-slate-900 rounded-xl transition-all"
+              className="text-zinc-500 hover:text-zinc-300 p-1.5 hover:bg-zinc-800 rounded transition-colors"
               title="Logout"
             >
-              <LogOut size={16} />
+              <LogOut size={14} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-grow flex flex-col min-w-0 bg-slate-950/20 relative z-10">
+      <div className="flex-grow flex flex-col min-w-0 bg-zinc-950">
         
         {/* Header */}
-        <div className="px-8 py-5 border-b border-slate-900/60 flex items-center justify-between bg-slate-950/40 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="md:hidden w-8 h-8 rounded-xl bg-primary-500/10 flex items-center justify-center">
-              <Bot size={16} className="text-primary-400" />
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-100 text-base">Chat Assistant</h2>
-              <p className="text-[10px] text-slate-500 font-medium">Enterprise RAG Engine · Grounded in your knowledge base</p>
-            </div>
+        <div className="px-8 py-4 border-b border-zinc-900 flex items-center justify-between bg-zinc-950/60">
+          <div>
+            <h2 className="font-semibold text-sm text-zinc-200">Chat Session</h2>
+            <p className="text-[10px] text-zinc-500">Retrieval Augmented Generation with uploaded context</p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/80 border border-slate-850 rounded-full px-3.5 py-1.5 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="font-semibold text-slate-300">Live Context</span>
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-900 border border-zinc-800 rounded-full px-3 py-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+            <span className="text-[10px] font-medium text-zinc-400">Grounded Mode</span>
           </div>
         </div>
 
         {/* Message Container */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 space-y-6">
+        <div className="flex-grow overflow-y-auto px-6 md:px-16 py-8 space-y-6">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto text-center">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-primary-500/10 to-blue-600/10 border border-primary-500/20 flex items-center justify-center mb-6 shadow-inner animate-pulse">
-                <Sparkles size={28} className="text-primary-400" />
+            <div className="flex flex-col items-center justify-center h-full max-w-xl mx-auto text-center">
+              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-5 text-zinc-400">
+                <Bot size={20} />
               </div>
-              <h3 className="text-3xl font-extrabold mb-3 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                Enterprise AI Assistant
+              <h3 className="text-xl font-semibold mb-2 text-zinc-200">
+                Knowledge Assistant
               </h3>
-              <p className="text-slate-455 max-w-md text-sm mb-10 leading-relaxed">
-                Hello! Ask any question, and I will search your uploaded knowledge base documents to construct an accurate, citation-backed answer.
+              <p className="text-zinc-500 text-xs max-w-sm mb-8 leading-relaxed">
+                Query your local database or documents. Ask a question, and the assistant will search your files and provide a complete answer with citations.
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                 {[
                   "What topics are covered in the uploaded documents?",
                   "Summarize the core requirements",
@@ -388,10 +397,10 @@ const ChatPage = () => {
                   <button
                     key={suggestion}
                     onClick={() => { setInput(suggestion); textareaRef.current?.focus(); }}
-                    className="flex items-center justify-between px-5 py-4 rounded-2xl bg-slate-900/30 border border-slate-900 hover:border-primary-500/30 hover:bg-slate-900/60 transition-all text-sm text-left text-slate-400 hover:text-white shadow-sm hover:shadow-md hover:scale-[1.01]"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg bg-zinc-900/30 border border-zinc-900 hover:border-zinc-800 hover:bg-zinc-900/60 transition-all text-xs text-left text-zinc-400 hover:text-zinc-200"
                   >
-                    <span className="font-medium truncate">{suggestion}</span>
-                    <ChevronRight size={14} className="text-slate-600 shrink-0 ml-2" />
+                    <span className="truncate">{suggestion}</span>
+                    <ChevronRight size={12} className="text-zinc-500 shrink-0 ml-2" />
                   </button>
                 ))}
               </div>
@@ -399,71 +408,75 @@ const ChatPage = () => {
           )}
 
           {/* Messages Mapping */}
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-2xl mx-auto space-y-6">
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end animate-in slide-in-from-right-4 duration-300' : 'justify-start animate-in slide-in-from-left-4 duration-300'}`}>
+              <div key={msg.id} className="space-y-2 animate-in fade-in duration-200">
                 
-                {/* Assistant Avatar */}
-                {msg.role === 'assistant' && (
-                  <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 mt-1 shadow-lg shadow-primary-500/10">
-                    <Bot size={18} className="text-white" />
-                  </div>
-                )}
-                
-                <div className={`max-w-[85%] sm:max-w-xl space-y-2.5 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-                  
-                  {/* Bubble Content */}
-                  <div className={`rounded-2xl px-5 py-4.5 text-sm leading-relaxed shadow-md ${
-                    msg.role === 'user'
-                      ? 'bg-gradient-to-br from-primary-600 to-blue-600 text-white rounded-tr-none shadow-primary-950/20'
-                      : 'bg-slate-900/40 backdrop-blur-md text-slate-200 border border-slate-900 rounded-tl-none'
-                  }`}>
-                    <MessageContent content={msg.content} isUser={msg.role === 'user'} />
-                  </div>
-
-                  {/* Document Citations / Sources */}
-                  {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1 animate-in fade-in duration-500">
-                      {msg.sources.map((src, i) => (
-                        <div key={i} className="flex items-center gap-1.5 text-[10px] bg-slate-900/60 border border-slate-900 px-3 py-1.5 rounded-full text-slate-400 shadow-sm hover:border-slate-800 transition-colors">
-                          <FileText size={10} className="text-primary-400" />
-                          <span className="font-semibold truncate max-w-[150px]">{src}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* Avatar Label */}
+                <div className="flex items-center gap-2">
+                  {msg.role === 'assistant' ? (
+                    <>
+                      <div className="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                        <Bot size={11} className="text-zinc-400" />
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Assistant</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                        <User size={11} className="text-zinc-400" />
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">User</span>
+                    </>
                   )}
                 </div>
+                
+                {/* Bubble Content */}
+                <div className={`text-sm leading-relaxed px-5 py-4 rounded-xl border ${
+                  msg.role === 'user'
+                    ? 'bg-zinc-900/40 border-zinc-850 text-zinc-100'
+                    : 'bg-transparent border-transparent text-zinc-200 pl-5 border-l-2 border-zinc-800 rounded-none'
+                }`}>
+                  <MessageContent content={msg.content} isUser={msg.role === 'user'} />
+                </div>
 
-                {/* User Avatar */}
-                {msg.role === 'user' && (
-                  <div className="w-9 h-9 rounded-2xl bg-slate-900 border border-slate-850 flex items-center justify-center shrink-0 mt-1 shadow-md">
-                    <User size={16} className="text-slate-400" />
+                {/* Citations / Sources */}
+                {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 pl-5">
+                    {msg.sources.map((src, i) => (
+                      <div key={i} className="flex items-center gap-1.2 text-[9px] bg-zinc-900 border border-zinc-850 px-2.5 py-1 rounded text-zinc-500">
+                        <FileText size={9} className="text-zinc-500 shrink-0" />
+                        <span className="truncate max-w-[120px] ml-1">{src}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Assistant Loading State */}
-          {isLoading && (
-            <div className="max-w-3xl mx-auto flex gap-4 justify-start">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-primary-500/10">
-                <Bot size={18} className="text-white animate-pulse" />
+          {/* Assistant Loading State (Only show before first chunk arrives) */}
+          {isLoading && (messages.length === 0 || messages[messages.length - 1].role !== 'assistant' || !messages[messages.length - 1].content) && (
+            <div className="max-w-2xl mx-auto space-y-2 animate-pulse">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+                  <Bot size={11} className="text-zinc-400" />
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Assistant</span>
               </div>
-              <div className="bg-slate-900/40 border border-slate-900 rounded-2xl rounded-tl-none px-5 py-4 shadow-sm animate-pulse">
-                <div className="flex gap-2 items-center">
-                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  <span className="text-[10px] font-bold text-slate-550 ml-2 uppercase tracking-wider animate-pulse">Formulating response...</span>
+              <div className="text-sm pl-5 border-l-2 border-zinc-850 py-2">
+                <div className="flex gap-1.5 items-center">
+                  <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-1.5 h-1.5 bg-zinc-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="max-w-md mx-auto flex justify-center animate-in fade-in duration-300">
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold px-4.5 py-3 rounded-xl shadow-md text-center">
+            <div className="max-w-md mx-auto flex justify-center mt-4">
+              <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm text-center">
                 {error}
               </div>
             </div>
@@ -473,17 +486,17 @@ const ChatPage = () => {
         </div>
 
         {/* Input Bar Area */}
-        <div className="px-6 md:px-12 pb-8 pt-4 border-t border-slate-900/60 bg-slate-950/20 backdrop-blur-md">
-          <div className="max-w-3xl mx-auto relative">
+        <div className="px-6 md:px-16 pb-8 pt-2 bg-zinc-950 border-t border-zinc-900">
+          <div className="max-w-2xl mx-auto relative flex items-center">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask a question about your documents... (Enter to send, Shift+Enter for new line)"
+              placeholder="Send a message..."
               rows={1}
-              className="w-full bg-slate-900/40 border border-slate-900 rounded-2xl pl-5 pr-14 py-4.5 text-sm resize-none focus:outline-none focus:border-primary-500/40 focus:ring-1 focus:ring-primary-500/10 text-white placeholder-slate-500 transition-all leading-relaxed shadow-inner"
-              style={{ minHeight: '58px', maxHeight: '200px' }}
+              className="w-full bg-zinc-900 border border-zinc-850 rounded-lg pl-4 pr-12 py-3.5 text-sm resize-none focus:outline-none focus:border-zinc-700 text-zinc-100 placeholder-zinc-500 leading-relaxed shadow-sm"
+              style={{ minHeight: '48px', maxHeight: '200px' }}
               onInput={e => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
@@ -492,13 +505,13 @@ const ChatPage = () => {
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className="absolute right-3.5 bottom-3.5 w-9 h-9 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 disabled:from-slate-900 disabled:to-slate-900 disabled:border disabled:border-slate-800/40 text-white disabled:text-slate-650 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl flex items-center justify-center transition-all shadow-lg shadow-primary-500/10 hover:scale-105 active:scale-[0.95]"
+              className="absolute right-3.5 bottom-2.5 w-7 h-7 bg-zinc-850 border border-zinc-750 hover:bg-zinc-850 disabled:opacity-40 disabled:cursor-not-allowed rounded flex items-center justify-center transition-colors shadow-sm text-zinc-400"
             >
-              {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={12} />}
             </button>
           </div>
-          <p className="text-center text-[10px] text-slate-600 font-medium tracking-wider uppercase mt-3">
-            Grounded RAG Response · Verify critical facts
+          <p className="text-center text-[9px] text-zinc-650 font-medium tracking-wider uppercase mt-2">
+            Grounded by local context files
           </p>
         </div>
       </div>

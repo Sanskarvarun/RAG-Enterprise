@@ -28,32 +28,32 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
-      <div className="max-w-md w-full animate-in fade-in zoom-in duration-500">
-        <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 p-8 rounded-2xl shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4 font-sans antialiased text-zinc-100">
+      <div className="max-w-md w-full animate-in fade-in zoom-in duration-300">
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl shadow-xl">
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-slate-400">Enterprise AI Assistant Portal</p>
+            <h1 className="text-2xl font-bold text-zinc-100 mb-1">Welcome Back</h1>
+            <p className="text-zinc-500 text-xs">Enterprise AI Assistant Portal</p>
           </div>
           
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-lg mb-6 text-sm">
+            <div className="bg-zinc-950 border border-red-900/40 text-red-400 p-4 rounded-xl mb-6 text-xs font-semibold">
               {error}
             </div>
           )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Username</label>
+              <label className="text-xs font-semibold text-zinc-400 block">Username</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <User size={18} />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-650">
+                  <User size={16} />
                 </div>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white placeholder-slate-500 transition-all"
+                  className="block w-full pl-10 pr-3.5 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-zinc-700 focus:outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
                   placeholder="Enter your username"
                   required
                 />
@@ -61,16 +61,16 @@ const LoginPage = () => {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300 block">Password</label>
+              <label className="text-xs font-semibold text-zinc-400 block">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <Lock size={18} />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-650">
+                  <Lock size={16} />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-white placeholder-slate-500 transition-all"
+                  className="block w-full pl-10 pr-3.5 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:border-zinc-700 focus:outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
                   placeholder="••••••••"
                   required
                 />
@@ -80,21 +80,21 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-900/20 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-bold text-sm rounded-xl transition-colors shadow-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+              {isLoading ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
               Sign In
             </button>
           </form>
 
           <div className="mt-3 text-right">
-            <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">Forgot password?</Link>
+            <Link to="/forgot-password" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Forgot password?</Link>
           </div>
           
-          <div className="mt-8 text-center">
-            <p className="text-slate-400 text-sm">
+          <div className="mt-8 text-center border-t border-zinc-850 pt-6">
+            <p className="text-zinc-550 text-xs">
               Don't have an account?{' '}
-              <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium underline underline-offset-4">
+              <Link to="/register" className="text-zinc-300 hover:text-zinc-100 font-bold transition-colors">
                 Register now
               </Link>
             </p>
