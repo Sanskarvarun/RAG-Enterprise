@@ -6,6 +6,8 @@ import {
   CheckCircle2, Clock, XCircle, File,
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 function SkeletonRow() {
   return (
     <div className="flex items-center justify-between px-5 py-4 animate-pulse">
@@ -80,7 +82,7 @@ export default function AdminDocuments() {
     const fetchDocs = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('/admin/documents', {
+        const res = await axios.get(`${API_URL}/admin/documents`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDocs(res.data);

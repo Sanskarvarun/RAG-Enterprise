@@ -9,6 +9,7 @@ import ChatPage from './pages/ChatPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminDocuments from './pages/AdminDocuments';
+import AdminAnalytics from './pages/AdminAnalytics';
 import ErrorBoundary from './components/ErrorBoundary';
 import './api/axiosSetup';
 import Header from './components/Header';
@@ -143,6 +144,7 @@ function App() {
             <Route path="/admin" element={<ProtectedRoute><ErrorBoundary><AdminDashboard /></ErrorBoundary></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><ErrorBoundary><AdminUsers /></ErrorBoundary></ProtectedRoute>} />
             <Route path="/admin/documents" element={<ProtectedRoute><ErrorBoundary><AdminDocuments /></ErrorBoundary></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute><ErrorBoundary><AdminAnalytics /></ErrorBoundary></ProtectedRoute>} />
             <Route 
               path="/" 
               element={

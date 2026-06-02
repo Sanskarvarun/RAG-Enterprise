@@ -24,15 +24,14 @@ const cards = [
     border: 'group-hover:border-sky-500/40',
   },
   {
-    to: '#',
+    to: '/admin/analytics',
     icon: <BarChart3 size={18} />,
     title: 'Analytics',
     desc: 'Monitor system usage, query volumes, and performance metrics.',
-    action: 'Coming Soon',
+    action: 'View Analytics',
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
     border: 'group-hover:border-emerald-500/40',
-    disabled: true,
   },
 ];
 
