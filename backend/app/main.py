@@ -6,6 +6,7 @@ from app.core.rate_limiter import SimpleRateLimiterMiddleware
 from app.models.chat import Message, Conversation
 from app.models.document import Document
 from app.models.user import User
+from app.models.semantic_cache import SemanticCache
 from app.db.database import engine, Base
 from app.api.auth import router as auth_router
 from fastapi import FastAPI

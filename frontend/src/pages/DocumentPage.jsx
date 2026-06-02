@@ -13,6 +13,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const DocumentPage = () => {
   const [files, setFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadingFileName, setUploadingFileName] = useState('');
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const { token } = useAuth();
@@ -46,6 +48,8 @@ const DocumentPage = () => {
     formData.append('file', file);
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadingFileName(file.name);
     setError('');
 
     try {
@@ -53,6 +57,11 @@ const DocumentPage = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`
+        },
+        onUploadProgress: (progressEvent) => {
+          const total = progressEvent.total || progressEvent.lengthComputable ? progressEvent.total : file.size;
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / total);
+          setUploadProgress(percentCompleted);
         }
       });
       fetchDocuments();
@@ -60,6 +69,8 @@ const DocumentPage = () => {
       setError(err.response?.data?.detail || 'Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
+      setUploadingFileName('');
+      setUploadProgress(0);
     }
   };
 
@@ -178,7 +189,9 @@ const DocumentPage = () => {
           
           <label className={`cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 rounded-lg text-xs font-semibold transition-all shadow-sm ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
             {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-            {isUploading ? 'Syncing...' : 'Upload Document'}
+            {isUploading 
+              ? (uploadProgress < 100 ? `Uploading ${uploadProgress}%` : 'Processing...') 
+              : 'Upload Document'}
             <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.docx,.doc,.txt,.csv" />
           </label>
         </div>
@@ -223,30 +236,56 @@ const DocumentPage = () => {
           </div>
         )}
 
-        {/* Drag & Drop Zone */}
-        <div 
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
-          className={`border border-dashed rounded-xl p-8 text-center mb-8 transition-colors ${
-            dragActive 
-              ? 'border-zinc-500 bg-zinc-900/50' 
-              : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/20'
-          }`}
-        >
-          <div className="max-w-xs mx-auto flex flex-col items-center">
-            <div className="w-10 h-10 bg-zinc-850 border border-zinc-750 rounded-lg flex items-center justify-center mb-3 text-zinc-450">
-              <Upload size={18} />
+        {/* Drag & Drop Zone or Progress Bar */}
+        {isUploading ? (
+          <div className="border border-zinc-800 rounded-xl p-8 text-center mb-8 bg-zinc-900/10">
+            <div className="max-w-md mx-auto flex flex-col items-center">
+              <div className="w-10 h-10 bg-zinc-850 border border-zinc-750 rounded-lg flex items-center justify-center mb-4 text-zinc-400">
+                <Loader2 className="animate-spin text-zinc-500" size={18} />
+              </div>
+              <h3 className="font-semibold text-sm mb-1 text-zinc-200 truncate max-w-full">
+                {uploadingFileName}
+              </h3>
+              <p className="text-[10px] text-zinc-500 mb-4">
+                {uploadProgress < 100 
+                  ? `Uploading to server... ${uploadProgress}%` 
+                  : 'File uploaded. Processing, extracting text & generating embeddings...'}
+              </p>
+              
+              {/* Progress bar track */}
+              <div className="w-full bg-zinc-950 border border-zinc-900 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-300 ${uploadProgress < 100 ? 'bg-zinc-500' : 'bg-green-600 animate-pulse'}`}
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
             </div>
-            <h3 className="font-semibold text-sm mb-0.5">Drag and drop file here</h3>
-            <p className="text-[10px] text-zinc-500 mb-4">Supports PDF, DOCX, TXT, or CSV (Max 25MB)</p>
-            <label className="cursor-pointer text-[10px] font-bold text-zinc-300 hover:text-zinc-200 bg-zinc-850 border border-zinc-750 px-3.5 py-2 rounded transition-colors">
-              Browse Files
-              <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.docx,.doc,.txt,.csv" />
-            </label>
           </div>
-        </div>
+        ) : (
+          <div 
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            className={`border border-dashed rounded-xl p-8 text-center mb-8 transition-colors ${
+              dragActive 
+                ? 'border-zinc-500 bg-zinc-900/50' 
+                : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/20'
+            }`}
+          >
+            <div className="max-w-xs mx-auto flex flex-col items-center">
+              <div className="w-10 h-10 bg-zinc-850 border border-zinc-750 rounded-lg flex items-center justify-center mb-3 text-zinc-450">
+                <Upload size={18} />
+              </div>
+              <h3 className="font-semibold text-sm mb-0.5">Drag and drop file here</h3>
+              <p className="text-[10px] text-zinc-500 mb-4">Supports PDF, DOCX, TXT, or CSV (Max 25MB)</p>
+              <label className="cursor-pointer text-[10px] font-bold text-zinc-300 hover:text-zinc-200 bg-zinc-850 border border-zinc-750 px-3.5 py-2 rounded transition-colors">
+                Browse Files
+                <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} accept=".pdf,.docx,.doc,.txt,.csv" />
+              </label>
+            </div>
+          </div>
+        )}
 
         {/* Files List Header */}
         <div className="flex items-center justify-between mb-3 px-1">

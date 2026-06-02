@@ -41,7 +41,55 @@ def get_vector_store() -> Chroma:
     return _vector_store_instance
 
 
-def invalidate_vector_store():
-    """Call this after adding/deleting documents so the next request gets a fresh store."""
-    global _vector_store_instance
+_bm25_retriever_instance = None
+
+
+def get_bm25_retriever(vector_store):
+    global _bm25_retriever_instance
+    if _bm25_retriever_instance is None:
+        print("[RAG] Building BM25 retriever...")
+        try:
+            # Fetch all documents currently in the vector DB
+            all_content = vector_store._collection.get()
+            ids = all_content.get("ids", [])
+            if not ids:
+                print("[RAG] BM25: Vector store is empty, skipping.")
+                return None
+
+            from langchain_core.documents import Document
+            metadatas = all_content.get("metadatas", []) or []
+            documents = all_content.get("documents", []) or []
+
+            all_docs = []
+            for i in range(len(ids)):
+                meta = metadatas[i] if i < len(metadatas) else {}
+                doc_text = documents[i] if i < len(documents) else ""
+                all_docs.append(Document(
+                    page_content=doc_text,
+                    metadata=meta or {}
+                ))
+
+            if not all_docs:
+                return None
+
+            from langchain_community.retrievers import BM25Retriever
+            _bm25_retriever_instance = BM25Retriever.from_documents(all_docs)
+            _bm25_retriever_instance.k = 6
+            print(f"[RAG] BM25 retriever ready with {len(all_docs)} documents.")
+        except Exception as e:
+            print(f"[RAG] Failed to build BM25 retriever: {e}")
+            return None
+    return _bm25_retriever_instance
+
+
+def invalidate_rag_cache():
+    """Invalidates the in-memory cache of Chroma DB and BM25 retriever."""
+    global _vector_store_instance, _bm25_retriever_instance
     _vector_store_instance = None
+    _bm25_retriever_instance = None
+    print("[RAG] Cleared in-memory vector store and BM25 retriever caches.")
+
+
+def invalidate_vector_store():
+    """Wrapper for backward compatibility."""
+    invalidate_rag_cache()

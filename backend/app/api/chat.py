@@ -113,9 +113,17 @@ async def ask(
     db.add(user_msg)
     db.commit()
 
-    # 3. Get RAG response
+    # Retrieve recent chat history for context
+    history_msgs = db.query(Message).filter(
+        Message.conversation_id == conversation.id,
+        Message.id != user_msg.id
+    ).order_by(Message.created_at.desc()).limit(6).all()
+    history_msgs.reverse()
+    chat_history = [{"role": msg.role, "content": msg.content} for msg in history_msgs]
+
+    # 3. Get RAG response (integrated with query condensing, hybrid search, and cache)
     try:
-        result = await get_streaming_response(request.question)
+        result = await get_streaming_response(request.question, chat_history=chat_history, db=db)
         answer = result["answer"]
         sources = result["sources"]
     except Exception as e:
@@ -194,13 +202,21 @@ async def ask_stream(
     db.add(user_msg)
     db.commit()
 
+    # Retrieve recent chat history for context
+    history_msgs = db.query(Message).filter(
+        Message.conversation_id == conversation.id,
+        Message.id != user_msg.id
+    ).order_by(Message.created_at.desc()).limit(6).all()
+    history_msgs.reverse()
+    chat_history = [{"role": msg.role, "content": msg.content} for msg in history_msgs]
+
     full_answer = []
 
     async def event_stream():
         nonlocal full_answer
         try:
             sources = []
-            async for chunk in stream_rag_response(request.question):
+            async for chunk in stream_rag_response(request.question, chat_history=chat_history, db=db):
                 # Detect the trailing metadata line
                 if chunk.startswith("\n\n__SOURCES__:"):
                     sources_json = chunk.replace("\n\n__SOURCES__:", "")

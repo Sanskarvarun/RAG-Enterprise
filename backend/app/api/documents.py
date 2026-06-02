@@ -85,7 +85,14 @@ async def upload_document(
     try:
         chunks_count = process_document(file_path, filename)
         new_doc.status = "completed"
+        
+        # Clear semantic cache & invalidate RAG cache to keep retrievers updated
+        from app.models.semantic_cache import SemanticCache
+        from app.core.rag_config import invalidate_rag_cache
+        db.query(SemanticCache).delete()
         db.commit()
+        invalidate_rag_cache()
+
         return {
             "message": "File uploaded and processed successfully",
             "document_id": new_doc.id,
@@ -155,6 +162,12 @@ def delete_document(
 
     # 4. Delete document entry from DB
     db.delete(doc)
+    
+    # Clear semantic cache & invalidate RAG cache to keep retrievers updated
+    from app.models.semantic_cache import SemanticCache
+    from app.core.rag_config import invalidate_rag_cache
+    db.query(SemanticCache).delete()
     db.commit()
+    invalidate_rag_cache()
 
     return {"message": "Document deleted successfully"}
